@@ -13,6 +13,7 @@ public class SimpleCDLL<T> implements SimpleList<T> {
   // | Fields |
   // +--------+
 
+  private Node2<T> dummyNode2;
   /**
    * The front of the list
    */
@@ -33,9 +34,11 @@ public class SimpleCDLL<T> implements SimpleList<T> {
   public SimpleCDLL() {
     this.size = 0;
     // Create the dummy node
-    SimpleCDLL.this.front = new Node2<T>(null);
-    SimpleCDLL.this.front.next = SimpleCDLL.this.front;
-    SimpleCDLL.this.front.prev = SimpleCDLL.this.front;
+    SimpleCDLL.this.dummyNode2 = new Node2<T>(null);
+    SimpleCDLL.this.dummyNode2.next = SimpleCDLL.this.dummyNode2;
+    SimpleCDLL.this.dummyNode2.prev = SimpleCDLL.this.dummyNode2;
+    
+    SimpleCDLL.this.front = dummyNode2.next;
   } // SimpleDLL
 
   // +-----------+---------------------------------------------------------
@@ -63,7 +66,7 @@ public class SimpleCDLL<T> implements SimpleList<T> {
        * The cursor is between neighboring values, so we start links
        * to the previous and next value..
        */
-      Node2<T> prev = SimpleCDLL.this.front;
+      Node2<T> prev = dummyNode2;
       Node2<T> next = SimpleCDLL.this.front;
 
       /**
@@ -77,14 +80,10 @@ public class SimpleCDLL<T> implements SimpleList<T> {
       // +---------+
 
       public void add(T val) throws UnsupportedOperationException {
-        // Special case: The list is empty)
-        if (size == 0) {
-          this.prev = this.prev.insertAfter(val);
-          SimpleCDLL.this.front = this.prev;
-        } else {
         // Normal case:
-          this.prev = this.prev.insertAfter(val);
-        }
+        this.prev = this.prev.insertAfter(val);
+          SimpleCDLL.this.front = dummyNode2.next;
+
         // Note that we cannot update
         this.update = null;
 
@@ -147,23 +146,17 @@ public class SimpleCDLL<T> implements SimpleList<T> {
           this.prev = this.update.prev;
           --this.pos;
         } // if
-
-        // Update the front
-        if (SimpleCDLL.this.front == this.update) {
-          SimpleCDLL.this.front = this.update.next;
-        } // if
-
         // Do the real work
         this.update.remove();
         --SimpleCDLL.this.size;
-
+        SimpleCDLL.this.front = dummyNode2.next;
         // Note that no more updates are possible
         this.update = null;
       } // remove()
 
       public void set(T val) {
         // Sanity check
-        if (this.update == null) {
+        if (this.update == null || this.update.equals(SimpleCDLL.this.front)) {
           throw new IllegalStateException();
         } // if
         // Do the real work
