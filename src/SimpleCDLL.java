@@ -6,7 +6,7 @@ import java.util.NoSuchElementException;
 /**
  * Circular doubly-linked lists.
  *
- * These do *not* (yet) support the Fail Fast policy.
+ * These do support the Fail Fast policy.
  */
 public class SimpleCDLL<T> implements SimpleList<T> {
   // +--------+------------------------------------------------------------
@@ -24,6 +24,12 @@ public class SimpleCDLL<T> implements SimpleList<T> {
    */
   int size;
 
+  /**
+   * Fail fast makes sure that if one iterator modifies the list then the others shouldn't be able
+   * to The counter keeps track of the number of modificatons made by all counters
+   */
+  int numModifications;
+
   // +--------------+------------------------------------------------------
   // | Constructors |
   // +--------------+
@@ -37,7 +43,7 @@ public class SimpleCDLL<T> implements SimpleList<T> {
     SimpleCDLL.this.dummyNode2 = new Node2<T>(null);
     SimpleCDLL.this.dummyNode2.next = SimpleCDLL.this.dummyNode2;
     SimpleCDLL.this.dummyNode2.prev = SimpleCDLL.this.dummyNode2;
-    
+
     SimpleCDLL.this.front = dummyNode2.next;
   } // SimpleDLL
 
@@ -56,33 +62,50 @@ public class SimpleCDLL<T> implements SimpleList<T> {
       // +--------+
 
       /**
-       * The position in the list of the next value to be returned.
-       * Included because ListIterators must provide nextIndex and
-       * prevIndex.
+       * The position in the list of the next value to be returned. Included because ListIterators
+       * must provide nextIndex and prevIndex.
        */
       int pos = 0;
 
       /**
-       * The cursor is between neighboring values, so we start links
-       * to the previous and next value..
+       * The cursor is between neighboring values, so we start links to the previous and next
+       * value..
        */
       Node2<T> prev = dummyNode2;
       Node2<T> next = SimpleCDLL.this.front;
 
       /**
-       * The node to be updated by remove or set.  Has a value of
-       * null when there is no such value.
+       * The node to be updated by remove or set. Has a value of null when there is no such value.
        */
       Node2<T> update = null;
+
+      /**
+       * Fail fast makes sure that if one iterator modifies the list then the others shouldn't be
+       * able to The counter keeps track of the number of modificatons made by all counters
+       */
+      int curModifications = numModifications;
+
 
       // +---------+-------------------------------------------------------
       // | Methods |
       // +---------+
 
-      public void add(T val) throws UnsupportedOperationException {
+      /**
+       * Adds an element with value val to the list where the iterator is by modifying the list
+       * 
+       * @exception ConcurrentModificationException when the list has been modified by a different
+       *            iterator since this iterator was created
+       * @exception IllegalStateException when remove() or add(V) has been called since the last call to previous() or next()
+       */
+      public void add(T val) throws ConcurrentModificationException {
+        // Has the list been modified since the iterator was created?
+        if (!(this.curModifications == SimpleCDLL.this.numModifications)) {
+          throw new ConcurrentModificationException();
+        } // if
+
         // Normal case:
         this.prev = this.prev.insertAfter(val);
-          SimpleCDLL.this.front = dummyNode2.next;
+        SimpleCDLL.this.front = dummyNode2.next;
 
         // Note that we cannot update
         this.update = null;
@@ -90,21 +113,63 @@ public class SimpleCDLL<T> implements SimpleList<T> {
         // Increase the size
         ++SimpleCDLL.this.size;
 
-        // Update the position. 
+        // Update the position.
         ++this.pos;
+
+        // Update current modifications for the list
+        ++SimpleCDLL.this.numModifications;
+
+        // Update current modifications for the iterator
+        ++this.curModifications;
       } // add(T)
 
-      public boolean hasNext() {
+
+      /**
+       * Returns true if there is an subsequent element in the list
+       * 
+       * @exception ConcurrentModificationException when the list has been modified by a different
+       *            iterator since this iterator was created
+       */
+      public boolean hasNext() throws ConcurrentModificationException {
+        // Has the list been modified since the iterator was created?
+        if (!(this.curModifications == SimpleCDLL.this.numModifications)) {
+          throw new ConcurrentModificationException();
+        } // if
+
         return (this.pos < SimpleCDLL.this.size);
       } // hasNext()
 
-      public boolean hasPrevious() {
+
+      /**
+       * Returns true if there is an previous element in the list
+       * 
+       * @exception ConcurrentModificationException when the list has been modified by a different
+       *            iterator since this iterator was created
+       */
+      public boolean hasPrevious() throws ConcurrentModificationException {
+        // Has the list been modified since the iterator was created?
+        if (!(this.curModifications == SimpleCDLL.this.numModifications)) {
+          throw new ConcurrentModificationException();
+        } // if
+
         return (this.pos > 0);
       } // hasPrevious()
 
-      public T next() {
+
+      /**
+       * Returns the next element in the list and moves the iterator forward
+       * 
+       * @exception ConcurrentModificationException when the list has been modified by a different
+       *            iterator since this iterator was created
+       * @exception NoSuchElementException when there is not a next element
+       */
+      public T next() throws ConcurrentModificationException {
+        // Has the list been modified since the iterator was created?
+        if (!(this.curModifications == SimpleCDLL.this.numModifications)) {
+          throw new ConcurrentModificationException();
+        }
         if (!this.hasNext()) {
-         throw new NoSuchElementException();
+          throw new NoSuchElementException();
         } // if
         // Identify the node to update
         this.update = this.next;
@@ -117,22 +182,68 @@ public class SimpleCDLL<T> implements SimpleList<T> {
         return this.update.value;
       } // next()
 
-      public int nextIndex() {
+
+      /**
+       * Returns the index of the iterator's next element
+       * 
+       * @exception ConcurrentModificationException when the list has been modified by a different
+       *            iterator since this iterator was created
+       */
+      public int nextIndex() throws ConcurrentModificationException {
+        // Has the list been modified since the iterator was created?
+        if (!(this.curModifications == SimpleCDLL.this.numModifications)) {
+          throw new ConcurrentModificationException();
+        }
         return this.pos;
       } // nextIndex()
 
-      public int previousIndex() {
+
+      /**
+       * Returns the index of the iterator's previous element
+       * 
+       * @exception ConcurrentModificationException when the list has been modified by a different
+       *            iterator since this iterator was created
+       */
+      public int previousIndex() throws ConcurrentModificationException {
+        // Has the list been modified since the iterator was created?
+        if (!(this.curModifications == SimpleCDLL.this.numModifications)) {
+          throw new ConcurrentModificationException();
+        }
         return this.pos - 1;
       } // prevIndex
 
-      public T previous() throws NoSuchElementException {
+
+      /**
+       * Returns the previous element in the list and moves the iterator backward
+       * 
+       * @exception ConcurrentModificationException when the list has been modified by a different
+       *            iterator since this iterator was created
+       * @exception NoSuchElementException when there is not a previous element
+       */
+      public T previous() throws NoSuchElementException, ConcurrentModificationException {
+        // Has the list been modified since the iterator was created?
+        if (!(this.curModifications == SimpleCDLL.this.numModifications)) {
+          throw new ConcurrentModificationException();
+        }
         if (!this.hasPrevious())
           throw new NoSuchElementException();
         // STUB
         return null;
       } // previous()
 
-      public void remove() {
+
+      /**
+       * Removes the last returned element of the list. May be the element before or after the iterator depending on the last call to previous() or next()
+       * 
+       * @exception ConcurrentModificationException when the list has been modified by a different
+       *            iterator since this iterator was created
+       * @exception IllegalStateException when remove() or add(V) has been called since the last call to previous() or next()
+       */
+      public void remove() throws ConcurrentModificationException {
+        // Has the list been modified since the iterator was created?
+        if (!(this.curModifications == SimpleCDLL.this.numModifications)) {
+          throw new ConcurrentModificationException();
+        }
         // Sanity check
         if (this.update == null) {
           throw new IllegalStateException();
@@ -146,15 +257,35 @@ public class SimpleCDLL<T> implements SimpleList<T> {
           this.prev = this.update.prev;
           --this.pos;
         } // if
+
         // Do the real work
         this.update.remove();
         --SimpleCDLL.this.size;
         SimpleCDLL.this.front = dummyNode2.next;
+
         // Note that no more updates are possible
         this.update = null;
+
+        // Update current modifications for the list
+        ++SimpleCDLL.this.numModifications;
+
+        // Update current modifications for the iterator
+        ++this.curModifications;
+
       } // remove()
 
-      public void set(T val) {
+      /**
+       * Returns true if there is an subsequent element in the list
+       * 
+       * @exception ConcurrentModificationException when the list has been modified by a different
+       *            iterator since this iterator was created
+       * @exception IllegalStateException when remove() or add(V) has been called since the last call to previous() or next()
+       */
+      public void set(T val) throws ConcurrentModificationException {
+        // Has the list been modified since the iterator was created?
+        if (!(this.curModifications == SimpleCDLL.this.numModifications)) {
+          throw new ConcurrentModificationException();
+        }
         // Sanity check
         if (this.update == null || this.update.equals(SimpleCDLL.this.front)) {
           throw new IllegalStateException();
