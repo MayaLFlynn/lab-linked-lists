@@ -7,6 +7,13 @@ import java.util.NoSuchElementException;
  * Circular doubly-linked lists.
  *
  * These do support the Fail Fast policy.
+ * 
+ * @author Maya Flynn
+ *  Implemented all circular linked list elements, and fail fast
+ * @author Sam R 
+ *  Provided outline and implemented all doubly-linked list methods
+ *  
+ * 
  */
 public class SimpleCDLL<T> implements SimpleList<T> {
   // +--------+------------------------------------------------------------

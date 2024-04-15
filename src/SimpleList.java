@@ -3,6 +3,8 @@ import java.util.ListIterator;
 
 /**
  * Very simple lists.
+ * 
+ * @author SamR
  */
 public interface SimpleList<T> extends Iterable<T> {
   public Iterator<T> iterator();

@@ -2,6 +2,8 @@ import java.io.PrintWriter;
 
 /**
  * Some simple experiments with SimpleDLLs
+ * @author Maya Flynn
+ * @author Sam R
  */
 public class SCDLLExpt {
   public static void main(String[] args) throws Exception {
